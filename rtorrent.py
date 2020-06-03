@@ -20,6 +20,7 @@ def get_torrents() -> List[Torrent]:
                                "d.hash=",
                                "d.name=",
                                "d.ratio=",
+                               "d.custom1=",
                                "d.timestamp.started=",
                                "d.timestamp.finished=",
                                't.multicall=,"","t.url="')
@@ -29,9 +30,10 @@ def get_torrents() -> List[Torrent]:
             'hash': torrent[0],
             'name': torrent[1],
             'ratio': torrent[2] / 1000,
-            'added': datetime.fromtimestamp(torrent[3]),
-            'finished': datetime.fromtimestamp(torrent[4]),
-            'trackers': [group[1] for group in torrent[5]]
+            'label': torrent[3],
+            'added': datetime.fromtimestamp(torrent[4]),
+            'finished': datetime.fromtimestamp(torrent[5]),
+            'trackers': [group[1] for group in torrent[6]]
         })
 
     return torrents
