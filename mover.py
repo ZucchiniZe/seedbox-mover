@@ -7,6 +7,9 @@ import radarr
 
 
 def get_torrents_to_delete(days_old: int = 30) -> List[rtorrent.Torrent]:
+    '''
+    Get list of torrents from rtorrent that are more than `days_old` (default: 30)
+    '''
     torrents = rtorrent.get_finished_torrents()
 
     pruned = filter(lambda torrent: (datetime.today() -

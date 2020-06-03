@@ -20,11 +20,11 @@ class Torrent:
 
 
 def get_all_torrents() -> List[Torrent]:
-    """
+    '''
     Calls rTorrent XMLRPC endpoint with a multicall to get a list of torrrents
 
     returns a list of formatted torrents
-    """
+    '''
     torrents = []
     list = server.d.multicall2("",
                                "main",
