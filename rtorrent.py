@@ -1,11 +1,22 @@
 from datetime import datetime
+from dataclasses import dataclass
 from typing import List, Dict, Any
 import xmlrpc.client
 
 server_url = "***REMOVED***"
 server = xmlrpc.client.Server(server_url)
 
-Torrent = Dict[str, Any]
+
+@dataclass
+class Torrent:
+    '''Torrent Data'''
+    hash: str
+    name: str
+    ratio: float
+    label: str
+    added: datetime
+    finished: datetime
+    trackers: List[str]
 
 
 def get_torrents() -> List[Torrent]:
@@ -23,17 +34,18 @@ def get_torrents() -> List[Torrent]:
                                "d.custom1=",
                                "d.timestamp.started=",
                                "d.timestamp.finished=",
-                               't.multicall=,"","t.url="')
+                               't.multicall=,"","t.url="',
+                               )
 
     for torrent in list:
-        torrents.append({
-            'hash': torrent[0],
-            'name': torrent[1],
-            'ratio': torrent[2] / 1000,
-            'label': torrent[3],
-            'added': datetime.fromtimestamp(torrent[4]),
-            'finished': datetime.fromtimestamp(torrent[5]),
-            'trackers': [group[1] for group in torrent[6]]
-        })
+        torrents.append(Torrent(
+            hash=torrent[0],
+            name=torrent[1],
+            ratio=torrent[2] / 1000,
+            label=torrent[3],
+            added=datetime.fromtimestamp(torrent[4]),
+            finished=datetime.fromtimestamp(torrent[5]),
+            trackers=[group[1] for group in torrent[6]]
+        ))
 
     return torrents
