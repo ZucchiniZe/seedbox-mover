@@ -18,6 +18,23 @@ def get_torrents_to_delete(days_old: int = 30) -> List[rtorrent.Torrent]:
     return list(pruned)
 
 
-if __name__ == "__main__":
+def get_combined_paths():
+    movie_paths = radarr.get_movie_filepaths()
     torrents = get_torrents_to_delete()
-    pprint(torrents)
+    combined = []
+
+    for torrent in torrents:
+        path = movie_paths.get(torrent.name, None)
+
+        if path:
+            combined.append({
+                'path': path,
+                'torrent': torrent
+            })
+
+    return combined
+
+
+if __name__ == "__main__":
+    # torrents = get_torrents_to_delete()
+    get_combined_paths()
