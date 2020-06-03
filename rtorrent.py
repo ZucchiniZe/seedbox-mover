@@ -42,6 +42,7 @@ def get_all_torrents() -> List[Torrent]:
             finished = datetime.fromtimestamp(torrent[5])
         else:
             finished = None
+
         torrents.append(Torrent(
             hash=torrent[0],
             name=torrent[1],
