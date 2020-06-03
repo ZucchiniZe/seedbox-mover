@@ -7,13 +7,14 @@ import radarr
 
 
 def get_torrents_to_delete(days_old: int = 30) -> List[rtorrent.Torrent]:
-    '''
+    """
     Get list of torrents from rtorrent that are more than `days_old` (default: 30)
-    '''
+    """
     torrents = rtorrent.get_finished_torrents()
 
-    pruned = filter(lambda torrent: (datetime.today() -
-                                     torrent.finished).days > days_old, torrents)
+    pruned = filter(
+        lambda torrent: (datetime.today() - torrent.finished).days > days_old, torrents
+    )
 
     return list(pruned)
 
@@ -27,10 +28,7 @@ def get_combined_paths():
         path = movie_paths.get(torrent.name, None)
 
         if path:
-            combined.append({
-                'path': path,
-                'torrent': torrent
-            })
+            combined.append({"path": path, "torrent": torrent})
 
     return combined
 
