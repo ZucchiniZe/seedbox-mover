@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import List
-from pprint import pprint
 
-import rtorrent
 import radarr
+import rtorrent
 
 
 def get_torrents_to_delete(days_old: int = 30) -> List[rtorrent.Torrent]:

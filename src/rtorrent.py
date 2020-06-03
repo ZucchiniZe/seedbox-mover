@@ -1,7 +1,7 @@
-import xmlrpc.client
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
+import xmlrpc.client
 
 server_url = (
     "***REMOVED***"
@@ -42,6 +42,8 @@ def get_all_torrents() -> List[Torrent]:
     )
 
     for torrent in list:
+        finished: Optional[datetime]
+
         if torrent[5]:
             finished = datetime.fromtimestamp(torrent[5])
         else:
@@ -63,4 +65,4 @@ def get_all_torrents() -> List[Torrent]:
 
 
 def get_finished_torrents() -> List[Torrent]:
-    return filter(lambda torrent: torrent.finished, get_all_torrents())
+    return list(filter(lambda torrent: torrent.finished, get_all_torrents()))
