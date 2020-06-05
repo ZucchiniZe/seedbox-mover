@@ -27,14 +27,18 @@ def get_old_torrents(days_old: int = 30) -> List[rtorrent.Torrent]:
     """
     torrents = rtorrent.get_finished_torrents()
 
-    pruned = filter(
-        lambda torrent: (datetime.today() - torrent.finished).days > days_old, torrents
-    )
+    def _finished_filter(torrent: rtorrent.Torrent) -> bool:
+        if torrent.finished is not None:
+            return (datetime.today() - torrent.finished).days > days_old
+        else:
+            return False
+
+    pruned = filter(_finished_filter, torrents)
 
     return list(pruned)
 
 
-def get_combined_paths():
+def get_combined_paths() -> List[Movie]:
     """Combines the data from radarr and rTorrent
 
     Returns:
@@ -48,7 +52,7 @@ def get_combined_paths():
         path = movie_paths.get(torrent.name, None)
 
         if path:
-            combined.append(Movie(**{"path": path, "torrent": torrent}))
+            combined.append(Movie(path=path, torrent=torrent))
 
     return combined
 
