@@ -33,7 +33,11 @@ def get_movie_filepaths() -> Movies:
     movies: Movies = {}
 
     for movie in r.json():
-        if "movieFile" in movie.keys() and "sceneName" in movie["movieFile"].keys():
+        if (
+            "movieFile" in movie.keys()
+            and "sceneName" in movie["movieFile"].keys()
+            and movie["downloaded"]
+        ):
             movies[movie["movieFile"]["sceneName"]] = {
                 "original": movie["movieFile"]["sceneName"],
                 "filename": movie["movieFile"]["relativePath"],

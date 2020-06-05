@@ -48,9 +48,12 @@ def get_combined_paths() -> List[Movie]:
     """
     movie_paths = radarr.get_movie_filepaths()
     all_torrents = rtorrent.get_all_torrents()
+
     torrents = filter_old_torrents(all_torrents)
+
     combined = []
 
+    # get the union of torrents that exist in rTorrent and Radarr
     for torrent in torrents:
         path = movie_paths.get(torrent.name, None)
 
@@ -63,4 +66,5 @@ def get_combined_paths() -> List[Movie]:
 if __name__ == "__main__":
     # torrents = get_torrents_to_delete()
     paths = get_combined_paths()
+    print(paths)
     print(len(paths))
