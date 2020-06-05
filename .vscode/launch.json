@@ -8,7 +8,7 @@
       "name": "Python: Mover",
       "type": "python",
       "request": "launch",
-      "program": "${workspaceFolder}/mover.py",
+      "program": "${workspaceFolder}/src/mover.py",
       "console": "integratedTerminal"
     }
   ]
