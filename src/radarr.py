@@ -13,6 +13,10 @@ class MoviePath:
     filename: str
     basepath: str
 
+    @property
+    def fullpath(self):
+        return self.basepath + self.filename
+
     def __repr__(self):
         return f"Path(filename={self.filename}, original={self.original})"
 
