@@ -16,24 +16,26 @@ class Movie:
         pass
 
 
-def get_old_torrents(days_old: int = 30) -> List[rtorrent.Torrent]:
-    """Pulls torrents from rTorrent and filters torrents older than `days_old`.
+def filter_old_torrents(
+    torrents: List[rtorrent.Torrent], days_old: int = 30
+) -> List[rtorrent.Torrent]:
+    """Filters torrents finished older than `days_old`.
 
     Args:
-        days_old: the cutoff for how old the torrents should be (default 30)
+        days_old: the cutoff for how long the torrents should be finished by
+                  (default 30)
 
     Returns:
         List of filtered torrents.
     """
-    torrents = rtorrent.get_finished_torrents()
 
-    def _finished_filter(torrent: rtorrent.Torrent) -> bool:
+    def _finished_movies_filter(torrent: rtorrent.Torrent) -> bool:
         if torrent.finished is not None:
             return (datetime.today() - torrent.finished).days > days_old
         else:
             return False
 
-    pruned = filter(_finished_filter, torrents)
+    pruned = filter(_finished_movies_filter, torrents)
 
     return list(pruned)
 
@@ -45,7 +47,8 @@ def get_combined_paths() -> List[Movie]:
         A list of torrents matched between radarr and rTorrent
     """
     movie_paths = radarr.get_movie_filepaths()
-    torrents = get_old_torrents()
+    all_torrents = rtorrent.get_all_torrents()
+    torrents = filter_old_torrents(all_torrents)
     combined = []
 
     for torrent in torrents:
@@ -59,4 +62,5 @@ def get_combined_paths() -> List[Movie]:
 
 if __name__ == "__main__":
     # torrents = get_torrents_to_delete()
-    get_combined_paths()
+    paths = get_combined_paths()
+    print(len(paths))

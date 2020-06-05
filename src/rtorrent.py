@@ -25,8 +25,7 @@ class Torrent:
 def get_all_torrents() -> List[Torrent]:
     """Returns all torrents in rTorrent
 
-    Calls rTorrent XMLRPC with a multicall to get list of all torrents plus selected
-    attributes
+    Calls rTorrent XMLRPC with a multicall to get list of all torrents.
 
     Returns:
         A list of formatted torrents
@@ -65,15 +64,3 @@ def get_all_torrents() -> List[Torrent]:
         )
 
     return torrents
-
-
-def get_finished_torrents() -> List[Torrent]:
-    """Returns a filtered list of torrents that have been finished
-
-    Calls `get_all_torrents()` and filters out torrents that have not finished
-    downloading.
-
-    Returns:
-        A list of torrents that contain the finished attribute.
-    """
-    return list(filter(lambda torrent: torrent.finished, get_all_torrents()))
