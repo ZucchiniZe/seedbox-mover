@@ -49,13 +49,6 @@ def get_all_torrents() -> List[Torrent]:
     )
 
     for torrent in list:
-        finished: Optional[datetime]
-
-        if torrent[5]:
-            finished = datetime.fromtimestamp(torrent[5])
-        else:
-            finished = None
-
         torrents.append(
             Torrent(
                 hash=torrent[0],
@@ -63,7 +56,8 @@ def get_all_torrents() -> List[Torrent]:
                 ratio=torrent[2] / 1000,
                 label=torrent[3],
                 added=datetime.fromtimestamp(torrent[4]),
-                finished=finished,
+                # handle the possibility of torrents not being finished
+                finished=datetime.fromtimestamp(torrent[5]) if torrent[5] else None,
                 trackers=[group[1] for group in torrent[6]],
             )
         )
