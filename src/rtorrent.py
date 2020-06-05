@@ -21,6 +21,11 @@ class Torrent:
     finished: Optional[datetime]
     trackers: List[str]
 
+    def __repr__(self):
+        return (
+            f"Torrent(name={self.name}, label={self.label}, finished={self.finished})"
+        )
+
 
 def get_all_torrents() -> List[Torrent]:
     """Returns all torrents in rTorrent

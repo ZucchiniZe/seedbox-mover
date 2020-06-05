@@ -1,4 +1,5 @@
-from typing import Dict, TypedDict
+from dataclasses import dataclass
+from typing import Dict
 
 import requests
 
@@ -6,10 +7,14 @@ BASE_URL = "***REMOVED***"
 API_KEY = "***REMOVED***"
 
 
-class MoviePath(TypedDict):
+@dataclass
+class MoviePath:
     original: str
     filename: str
     basepath: str
+
+    def __repr__(self):
+        return f"Path(filename={self.filename}, original={self.original})"
 
 
 Movies = Dict[str, MoviePath]
@@ -38,10 +43,10 @@ def get_movie_filepaths() -> Movies:
             and "sceneName" in movie["movieFile"].keys()
             and movie["downloaded"]
         ):
-            movies[movie["movieFile"]["sceneName"]] = {
-                "original": movie["movieFile"]["sceneName"],
-                "filename": movie["movieFile"]["relativePath"],
-                "basepath": movie["path"],
-            }
+            movies[movie["movieFile"]["sceneName"]] = MoviePath(
+                original=movie["movieFile"]["sceneName"],
+                filename=movie["movieFile"]["relativePath"],
+                basepath=movie["path"],
+            )
 
     return movies

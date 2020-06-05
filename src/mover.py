@@ -54,6 +54,8 @@ def get_combined_paths() -> List[Movie]:
     combined = []
 
     # get the union of torrents that exist in rTorrent and Radarr
+    # TODO: find the movies that exist in radarr but have already been deleted
+    #       in rTorrent
     for torrent in torrents:
         path = movie_paths.get(torrent.name, None)
 
