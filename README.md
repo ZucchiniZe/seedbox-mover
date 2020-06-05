@@ -6,6 +6,6 @@ goals:
 
 - search through rtorrent and find files that are elliegible for moving to google drive and then remove them from the client
 - ellegibility criteriea:
-  - older than one month
-  - is a movie on radarr
-  - is on a specific tracker (torrentleech)
+  - [x] has been finished for more than 30 days
+  - [ ] exists as a movie on radarr but was previously deleted in rtorrent
+  - [ ] limit to a specific tracker (torrentleech)
