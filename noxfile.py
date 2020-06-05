@@ -20,6 +20,14 @@ def install_with_constraints(session, *args, **kwargs):
 
 
 @nox.session
+def black(session) -> None:
+    """Run black code formatter."""
+    args = session.posargs or locations
+    install_with_constraints(session, "black")
+    session.run("black", *args)
+
+
+@nox.session
 def lint(session):
     args = session.posargs or locations
     install_with_constraints(
