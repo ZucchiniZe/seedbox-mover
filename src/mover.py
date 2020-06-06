@@ -15,6 +15,17 @@ class Movie:
         # TODO: figure out how to handle deleting of files
         pass
 
+    @property
+    def pretty(self) -> str:
+        days_old = (datetime.today() - self.torrent.finished).days  # type: ignore
+        return f"""Movie
+-- Path: {self.path.fullpath} ({self.path.original})
+-- Torrent: {self.torrent.name}
+---- label: {self.torrent.label}
+---- ratio: {self.torrent.ratio}
+---- finished: {self.torrent.finished} ({days_old} days old)
+"""
+
 
 def old_torrents_filter(torrent: rtorrent.Torrent, days_old: int = 30) -> bool:
     """Filter function torrents finished older than `days_old`.
@@ -37,7 +48,7 @@ def get_combined_paths() -> List[Movie]:
     """Combines the data from radarr and rTorrent
 
     Returns:
-        A list of torrents matched between radarr and rTorrent
+        A list of torrents matched between radarr and rTorrent sorted by finished date.
     """
     movie_paths = radarr.get_movie_filepaths()
     all_torrents = rtorrent.get_all_torrents()
@@ -47,18 +58,20 @@ def get_combined_paths() -> List[Movie]:
     combined = []
 
     # get the union of torrents that exist in rTorrent and Radarr
-    # TODO: find the movies that exist in radarr but have already been deleted
-    #       in rTorrent
     for torrent in torrents:
         path = movie_paths.get(torrent.name, None)
 
         if path:
             combined.append(Movie(path=path, torrent=torrent))
 
-    return combined
+    # TODO: find the movies that exist in radarr but have already been deleted
+    #       in rTorrent
+
+    return sorted(combined, key=lambda movie: movie.torrent.finished, reverse=True)
 
 
 if __name__ == "__main__":
     paths = get_combined_paths()
-    print(paths)
+    for path in paths:
+        print(path.pretty)
     print(len(paths))
