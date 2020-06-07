@@ -1,3 +1,4 @@
+"""Find torrents on seedbox that can be safely removed."""
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
@@ -8,15 +9,18 @@ import rtorrent
 
 @dataclass
 class Movie:
+    """Movie with path and torrent information."""
+
     path: radarr.MoviePath
     torrent: Optional[rtorrent.Torrent]
 
-    def delete(self):
+    def delete(self):  # noqa: D102
         # TODO: figure out how to handle deleting of files
         pass
 
     @property
     def pretty(self) -> str:
+        """Nice nested text representation of a movie and its objects."""
         if self.torrent:
             days_old = (datetime.today() - self.torrent.finished).days  # type: ignore
             return f"""Movie

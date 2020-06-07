@@ -1,7 +1,8 @@
 [flake8]
-select = BLK,C,E,F,I,W
-ignore = E203,W503
+select = BLK,C,D,E,F,I,W
+ignore = E203,W503,D105
 max-line-length = 88
 
 application-import-names = rtorrent,radarr
 import-order-style = google
+docstring-convention = google

@@ -2,7 +2,7 @@ import tempfile
 
 import nox
 
-locations = "src", "noxfile.py"
+locations = ("src",)
 nox.options.sessions = "lint", "mypy"
 
 
@@ -31,7 +31,12 @@ def black(session) -> None:
 def lint(session):
     args = session.posargs or locations
     install_with_constraints(
-        session, "flake8", "flake8-bandit", "flake8-black", "flake8-import-order"
+        session,
+        "flake8",
+        "flake8-bandit",
+        "flake8-black",
+        "flake8-import-order",
+        "flake8-docstrings",
     )
     session.run("flake8", *args)
 

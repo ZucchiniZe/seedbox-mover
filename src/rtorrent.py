@@ -1,3 +1,4 @@
+"""Interface for rTorrent."""
 from dataclasses import dataclass
 from datetime import datetime
 import pathlib
@@ -12,7 +13,7 @@ server = xmlrpc.client.Server(server_url)
 
 @dataclass
 class Torrent:
-    """Torrent Data"""
+    """Torrent Data."""
 
     hash: str
     name: str
@@ -29,7 +30,7 @@ class Torrent:
 
 
 def get_all_torrents() -> List[Torrent]:
-    """Returns all torrents in rTorrent
+    """Returns all torrents in rTorrent.
 
     Calls rTorrent XMLRPC with a multicall to get list of all torrents.
 
