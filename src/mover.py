@@ -25,18 +25,16 @@ class Movie:
         if self.torrent:
             days_old = (datetime.today() - self.torrent.finished).days  # type: ignore
             return f"""Movie
--- Path: {self.radarr.fullpath}
----- original: {self.radarr.original}
--- Torrent: {self.torrent.name}
----- label: {self.torrent.label}
----- ratio: {self.torrent.ratio}
----- finished: {self.torrent.finished} ({days_old} days old)
-"""
+└─ Path: {self.radarr.fullpath}
+  └─ original: {self.radarr.original}
+└─ Torrent: {self.torrent.name}
+  └─ label: {self.torrent.label}
+  └─ ratio: {self.torrent.ratio}
+  └─ finished: {self.torrent.finished} ({days_old} days old)"""
         else:
             return f"""Movie
--- Path: {self.radarr.fullpath}
----- original: {self.radarr.original}
-"""
+└─ Path: {self.radarr.fullpath}
+  └─ original: {self.radarr.original}"""
 
     def __repr__(self):
         return f"Movie({self.radarr.original})"
