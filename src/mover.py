@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from functools import partial
 from typing import List
 
 import radarr
@@ -27,19 +28,25 @@ class Movie:
 """
 
 
-def old_torrents_filter(torrent: rtorrent.Torrent, days_old: int = 30) -> bool:
-    """Filter function torrents finished older than `days_old`.
+def finished_time_filter(
+    torrent: rtorrent.Torrent, invert: bool = False, days: int = 30
+) -> bool:
+    """Filter function torrents finished older than `days`.
 
     Args:
         torrent:  the torrent object to filter upon
-        days_old: the cutoff for how long the torrents should be finished by
+        invert:   invert the filter so its how many days young
+        days:     the number of days the filter should be
                   (default 30)
 
     Returns:
         Boolean value to filter older torrents
     """
-    if torrent.finished is not None:
-        return (datetime.today() - torrent.finished).days > days_old
+    if torrent.finished is not None and torrent.label == "radarr":
+        if invert:
+            return (datetime.today() - torrent.finished).days < days
+        else:
+            return (datetime.today() - torrent.finished).days > days
     else:
         return False
 
@@ -53,12 +60,13 @@ def get_combined_paths() -> List[Movie]:
     movie_paths = radarr.get_movie_filepaths()
     all_torrents = rtorrent.get_all_torrents()
 
-    torrents = filter(old_torrents_filter, all_torrents)
+    old_torrents = filter(finished_time_filter, all_torrents)
+    young_torrents = filter(partial(finished_time_filter, invert=True), all_torrents)
 
     combined = []
 
     # get the union of torrents that exist in rTorrent and Radarr
-    for torrent in torrents:
+    for torrent in old_torrents:
         path = movie_paths.get(torrent.name, None)
 
         if path:
