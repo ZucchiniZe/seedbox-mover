@@ -26,6 +26,7 @@ class Movie:
             days_old = (datetime.today() - self.torrent.finished).days  # type: ignore
             return f"""Movie
 └─ Path: {self.radarr.fullpath}
+  └─ size: {human_readable_size(self.radarr.size, decimal_places=1)}
   └─ original: {self.radarr.original}
 └─ Torrent: {self.torrent.name}
   └─ label: {self.torrent.label}
@@ -34,6 +35,7 @@ class Movie:
         else:
             return f"""Movie
 └─ Path: {self.radarr.fullpath}
+  └─ size: {human_readable_size(self.radarr.size, decimal_places=1)}
   └─ original: {self.radarr.original}"""
 
     def __repr__(self):
@@ -93,7 +95,7 @@ def get_deletable_movies() -> List[Movie]:
         if path.original not in torrent_names:
             movies_in_radarr_only.append(Movie(radarr=path, torrent=None))
 
-    return movies_in_both + movies_in_radarr_only
+    return movies_in_radarr_only + movies_in_both
 
 
 def human_readable_size(size: float, decimal_places: int = 3) -> str:
