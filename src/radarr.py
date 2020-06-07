@@ -29,25 +29,22 @@ class RadarrMovie:
         return f"Path(filename={self.filename}, original={self.original}, date_added={self.date_added})"  # noqa: E501
 
 
-Movies = Dict[str, RadarrMovie]
-
-
 def _url(path: str) -> str:
     """Helper function to build url with apikey at the end."""
     return f"{BASE_URL}{path}?apiKey={API_KEY}"
 
 
-def get_movie_filepaths() -> Movies:
+def get_movie_filepaths() -> Dict[str, RadarrMovie]:
     """Get a list of all the downloaded and their accompanying paths.
 
     Calls Radarr API to and builds a dict with the key being the original torrent name
     and the value being a dict to build the renamed file path
 
     Returns:
-        A list of movies with their `filename` and `basepath`
+        Dict[str, RadarrMovie]: dict of movies optimized for searching.
     """
     r = requests.get(_url("/movie"))
-    movies: Movies = {}
+    movies = {}
 
     for movie in r.json():
         if (

@@ -48,13 +48,12 @@ def finished_time_filter(
     """Filter function torrents finished older than `days`.
 
     Args:
-        torrent:  the torrent object to filter upon
-        invert:   invert the filter so its how many days young
-        days:     the number of days the filter should be
-                  (default 30)
+        torrent (rtorrent.Torrent): torrent object to filter upon
+        invert (bool, optional): invert filter so its days young. Defaults to False.
+        days (int, optional): number of days filter should be. Defaults to 30.
 
     Returns:
-        Boolean value to filter older torrents
+        bool: value to filter older torrents
     """
     if torrent.finished is not None and torrent.label == "radarr":
         if invert:
@@ -73,7 +72,7 @@ def get_deletable_movies() -> List[Movie]:
         - movie exists in rtorrent but has finished more than 30 days ago
 
     Returns:
-        A list of movies that have satisfied the conditions.
+        List[Movie]: A list of movies that have satisfied the conditions.
     """
     movie_paths = radarr.get_movie_filepaths()
     all_torrents = rtorrent.get_all_torrents()
@@ -100,16 +99,17 @@ def get_deletable_movies() -> List[Movie]:
 
 
 def human_readable_size(size: float, decimal_places: int = 3) -> str:
-    """Fomatter for num in bytes.
+    """Formatter for num in bytes.
 
     Gotten from https://stackoverflow.com/a/43690506/3453207
 
     Args:
-        size:           a number of bytes
-        decimal_places: number of decimal places to report
+        size (float): number of bytes
+        decimal_places (int, optional): number of decimal places to report.
+                                        Defaults to 3.
 
     Returns:
-        A string that contains the formatted size of bytes with the correct suffix
+        str: String formatted with the correct unit suffix
     """
     for unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
         if size < 1024.0:
