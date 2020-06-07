@@ -84,12 +84,32 @@ def human_readable_size(size: float, decimal_places: int = 3) -> str:
     return f"{size:.{decimal_places}f}{unit}"
 
 
-def get_deletable_movies() -> List[Movie]:
-    """List of movies that satisfy the conditions of deletion.
+def get_radarr_deletable_movies() -> List[Movie]:
+    """List of movies that only exist in radarr and not rtorrent.
 
-    Conditions (mutually exclusive):
-        - movie does not exist in rtorrent but does in radarr
-        - movie exists in rtorrent but has finished more than 30 days ago
+    Returns:
+        List[Movie]: List of movies
+    """
+    movie_paths = radarr.get_movie_filepaths()
+    all_torrents = rtorrent.get_all_torrents()
+
+    # find the movies that exist in radarr but have already been deleted in rTorrent
+    torrent_names = list(map(lambda torrent: torrent.name, all_torrents))
+    movies_in_radarr_only = []
+    for path in movie_paths.values():
+        if path.original not in torrent_names:
+            movies_in_radarr_only.append(Movie(radarr=path, torrent=None))
+
+    return movies_in_radarr_only
+
+
+def get_combined_deletable_movies() -> List[Movie]:
+    """List of movies that exist in rtorrent and radarr that satisfy conditions of deletion.
+
+    Conditions:
+        - movie exists in rtorrent
+        - movie exists in radarr
+        - has finished downloading more than 30 days ago
 
     Returns:
         List[Movie]: A list of movies that have satisfied the conditions.
@@ -106,18 +126,20 @@ def get_deletable_movies() -> List[Movie]:
         if path := movie_paths.get(torrent.name, None):
             movies_in_both.append(Movie(radarr=path, torrent=torrent))
 
-    # find the movies that exist in radarr but have already been deleted in rTorrent
-    torrent_names = list(map(lambda torrent: torrent.name, all_torrents))
-    movies_in_radarr_only = []
-    for path in movie_paths.values():
-        if path.original not in torrent_names:
-            movies_in_radarr_only.append(Movie(radarr=path, torrent=None))
+    return movies_in_both
 
-    return movies_in_radarr_only + movies_in_both
+
+def get_all_deletable_movies() -> List[Movie]:
+    """Combine both conditions to get a list of all movies that can be deleted.
+
+    Returns:
+        List[Movie]: All movies that satisfy conditions for deletion
+    """
+    return get_radarr_deletable_movies() + get_combined_deletable_movies()
 
 
 if __name__ == "__main__":
-    paths: List[Movie] = get_deletable_movies()
+    paths: List[Movie] = get_all_deletable_movies()
     size = reduce(lambda a, b: a + b, [movie.radarr.size for movie in paths])
 
     for path in paths:
