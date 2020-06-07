@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional
 import xmlrpc.client
+import pathlib
+
 
 server_url = (
     "***REMOVED***"
@@ -46,18 +48,23 @@ def get_all_torrents() -> List[Torrent]:
         "d.timestamp.started=",
         "d.timestamp.finished=",
         't.multicall=,"","t.url="',
+        "d.is_multi_file=",
     )
 
     for torrent in list:
+        # if the torrent is just a single file, remove the extension from the name
+        name = torrent[1] if torrent[7] else pathlib.Path(torrent[1]).stem
+        # handle the possibility of torrents not being finished
+        finished = datetime.fromtimestamp(torrent[5]) if torrent[5] else None
+
         torrents.append(
             Torrent(
                 hash=torrent[0],
-                name=torrent[1],
+                name=name,
                 ratio=torrent[2] / 1000,
                 label=torrent[3],
                 added=datetime.fromtimestamp(torrent[4]),
-                # handle the possibility of torrents not being finished
-                finished=datetime.fromtimestamp(torrent[5]) if torrent[5] else None,
+                finished=finished,
                 trackers=[group[1] for group in torrent[6]],
             )
         )
