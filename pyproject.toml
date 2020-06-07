@@ -7,6 +7,7 @@ authors = ["Alex Bierwagen <me@alexb.io>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "^2.23.0"
+python-dateutil = "^2.8.1"
 
 [tool.poetry.dev-dependencies]
 black = {version = "^19.10b0", allow-prereleases = true}

@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Dict
 
 import requests
+import dateutil.parser as dt
 
 BASE_URL = "***REMOVED***"
 API_KEY = "***REMOVED***"
@@ -12,13 +14,14 @@ class MoviePath:
     original: str
     filename: str
     basepath: str
+    date_added: datetime
 
     @property
     def fullpath(self):
         return f"{self.basepath}/{self.filename}"
 
     def __repr__(self):
-        return f"Path(filename={self.filename}, original={self.original})"
+        return f"Path(filename={self.filename}, original={self.original}, date_added={self.date_added})"
 
 
 Movies = Dict[str, MoviePath]
@@ -50,6 +53,9 @@ def get_movie_filepaths() -> Movies:
             movies[movie["movieFile"]["sceneName"]] = MoviePath(
                 original=movie["movieFile"]["sceneName"],
                 filename=movie["movieFile"]["relativePath"],
+                date_added=dt.parse(
+                    movie["movieFile"]["dateAdded"].replace("Z", "+00:00")
+                ),
                 basepath=movie["path"],
             )
 
