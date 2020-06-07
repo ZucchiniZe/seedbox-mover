@@ -64,40 +64,6 @@ def finished_time_filter(
         return False
 
 
-def get_deletable_movies() -> List[Movie]:
-    """List of movies that satisfy the conditions of deletion.
-
-    Conditions (mutually exclusive):
-        - movie does not exist in rtorrent but does in radarr
-        - movie exists in rtorrent but has finished more than 30 days ago
-
-    Returns:
-        List[Movie]: A list of movies that have satisfied the conditions.
-    """
-    movie_paths = radarr.get_movie_filepaths()
-    all_torrents = rtorrent.get_all_torrents()
-
-    old_torrents = filter(finished_time_filter, all_torrents)
-
-    # get the union of torrents that exist in rTorrent and Radarr
-    # TODO: limit to specifc tracker?
-    movies_in_both = []
-    for torrent in old_torrents:
-        path = movie_paths.get(torrent.name, None)
-
-        if path:
-            movies_in_both.append(Movie(radarr=path, torrent=torrent))
-
-    # find the movies that exist in radarr but have already been deleted in rTorrent
-    torrent_names = list(map(lambda torrent: torrent.name, all_torrents))
-    movies_in_radarr_only = []
-    for path in movie_paths.values():
-        if path.original not in torrent_names:
-            movies_in_radarr_only.append(Movie(radarr=path, torrent=None))
-
-    return movies_in_radarr_only + movies_in_both
-
-
 def human_readable_size(size: float, decimal_places: int = 3) -> str:
     """Formatter for num in bytes.
 
@@ -118,10 +84,44 @@ def human_readable_size(size: float, decimal_places: int = 3) -> str:
     return f"{size:.{decimal_places}f}{unit}"
 
 
+def get_deletable_movies() -> List[Movie]:
+    """List of movies that satisfy the conditions of deletion.
+
+    Conditions (mutually exclusive):
+        - movie does not exist in rtorrent but does in radarr
+        - movie exists in rtorrent but has finished more than 30 days ago
+
+    Returns:
+        List[Movie]: A list of movies that have satisfied the conditions.
+    """
+    movie_paths = radarr.get_movie_filepaths()
+    all_torrents = rtorrent.get_all_torrents()
+
+    old_torrents = filter(finished_time_filter, all_torrents)
+
+    # get the union of torrents that exist in rTorrent and Radarr
+    # TODO: limit to specifc tracker?
+    movies_in_both = []
+    for torrent in old_torrents:
+        if path := movie_paths.get(torrent.name, None):
+            movies_in_both.append(Movie(radarr=path, torrent=torrent))
+
+    # find the movies that exist in radarr but have already been deleted in rTorrent
+    torrent_names = list(map(lambda torrent: torrent.name, all_torrents))
+    movies_in_radarr_only = []
+    for path in movie_paths.values():
+        if path.original not in torrent_names:
+            movies_in_radarr_only.append(Movie(radarr=path, torrent=None))
+
+    return movies_in_radarr_only + movies_in_both
+
+
 if __name__ == "__main__":
-    paths = get_deletable_movies()
+    paths: List[Movie] = get_deletable_movies()
     size = reduce(lambda a, b: a + b, [movie.radarr.size for movie in paths])
+
     for path in paths:
-        print(path.pretty)
+        print(path.radarr.fullpath)
+
     print(len(paths))
     print(f"total size: {human_readable_size(size)}")
