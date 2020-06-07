@@ -5,9 +5,12 @@ import pathlib
 from typing import List, Optional
 import xmlrpc.client
 
-server_url = (
-    "***REMOVED***"
-)
+from environs import Env
+
+env = Env()
+env.read_env()
+
+server_url = env("RTORRENT_URL")
 server = xmlrpc.client.Server(server_url)
 
 

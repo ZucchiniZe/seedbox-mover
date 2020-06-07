@@ -1,13 +1,18 @@
 """Interface for radarr."""
 from dataclasses import dataclass
 from datetime import datetime
+import json
 from typing import Dict
 
 import dateutil.parser as dt
+from environs import Env
 import requests
 
-BASE_URL = "***REMOVED***"
-API_KEY = "***REMOVED***"
+env = Env()
+env.read_env()
+
+BASE_URL = env("RADARR_URL")
+API_KEY = env("RADARR_KEY")
 
 
 @dataclass
@@ -44,22 +49,27 @@ def get_movie_filepaths() -> Dict[str, RadarrMovie]:
         Dict[str, RadarrMovie]: dict of movies optimized for searching.
     """
     r = requests.get(_url("/movie"))
+    r.raise_for_status()
     movies = {}
 
-    for movie in r.json():
-        if (
-            "movieFile" in movie.keys()
-            and "sceneName" in movie["movieFile"].keys()
-            and movie["downloaded"]
-        ):
-            movies[movie["movieFile"]["sceneName"]] = RadarrMovie(
-                original=movie["movieFile"]["sceneName"],
-                filename=movie["movieFile"]["relativePath"],
-                size=movie["movieFile"]["size"],
-                date_added=dt.parse(
-                    movie["movieFile"]["dateAdded"].replace("Z", "+00:00")
-                ),
-                basepath=movie["path"],
-            )
+    try:
+        for movie in r.json():
+            if (
+                "movieFile" in movie.keys()
+                and "sceneName" in movie["movieFile"].keys()
+                and movie["downloaded"]
+            ):
+                movies[movie["movieFile"]["sceneName"]] = RadarrMovie(
+                    original=movie["movieFile"]["sceneName"],
+                    filename=movie["movieFile"]["relativePath"],
+                    size=movie["movieFile"]["size"],
+                    date_added=dt.parse(
+                        movie["movieFile"]["dateAdded"].replace("Z", "+00:00")
+                    ),
+                    basepath=movie["path"],
+                )
+    except json.JSONDecodeError:
+        print("json is malformed")
+        print("response", r.text)
 
     return movies
