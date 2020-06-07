@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict
 
-import requests
 import dateutil.parser as dt
+import requests
 
 BASE_URL = "***REMOVED***"
 API_KEY = "***REMOVED***"
@@ -21,7 +21,7 @@ class MoviePath:
         return f"{self.basepath}/{self.filename}"
 
     def __repr__(self):
-        return f"Path(filename={self.filename}, original={self.original}, date_added={self.date_added})"
+        return f"Path(filename={self.filename}, original={self.original}, date_added={self.date_added})"  # noqa: E501
 
 
 Movies = Dict[str, MoviePath]

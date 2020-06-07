@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
+import pathlib
 from typing import List, Optional
 import xmlrpc.client
-import pathlib
-
 
 server_url = (
     "***REMOVED***"
