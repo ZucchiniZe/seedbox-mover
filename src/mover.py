@@ -1,6 +1,7 @@
 """Find torrents on seedbox that can be safely removed."""
 from dataclasses import dataclass
 from datetime import datetime
+from functools import reduce
 from typing import List, Optional
 
 import radarr
@@ -11,7 +12,7 @@ import rtorrent
 class Movie:
     """Movie with path and torrent information."""
 
-    path: radarr.MoviePath
+    radarr: radarr.RadarrMovie
     torrent: Optional[rtorrent.Torrent]
 
     def delete(self):  # noqa: D102
@@ -24,8 +25,8 @@ class Movie:
         if self.torrent:
             days_old = (datetime.today() - self.torrent.finished).days  # type: ignore
             return f"""Movie
--- Path: {self.path.fullpath}
----- original: {self.path.original}
+-- Path: {self.radarr.fullpath}
+---- original: {self.radarr.original}
 -- Torrent: {self.torrent.name}
 ---- label: {self.torrent.label}
 ---- ratio: {self.torrent.ratio}
@@ -33,9 +34,12 @@ class Movie:
 """
         else:
             return f"""Movie
--- Path: {self.path.fullpath}
----- original: {self.path.original}
+-- Path: {self.radarr.fullpath}
+---- original: {self.radarr.original}
 """
+
+    def __repr__(self):
+        return f"Movie({self.radarr.original})"
 
 
 def finished_time_filter(
@@ -83,20 +87,37 @@ def get_deletable_movies() -> List[Movie]:
         path = movie_paths.get(torrent.name, None)
 
         if path:
-            movies_in_both.append(Movie(path=path, torrent=torrent))
+            movies_in_both.append(Movie(radarr=path, torrent=torrent))
 
     # find the movies that exist in radarr but have already been deleted in rTorrent
     torrent_names = list(map(lambda torrent: torrent.name, all_torrents))
     movies_in_radarr_only = []
     for path in movie_paths.values():
         if path.original not in torrent_names:
-            movies_in_radarr_only.append(Movie(path=path, torrent=None))
+            movies_in_radarr_only.append(Movie(radarr=path, torrent=None))
 
     return movies_in_both + movies_in_radarr_only
 
 
+def sizeof_fmt(num: float, suffix: str = "B") -> str:
+    """Fomatter for num in bytes.
+
+    Gotten from https://stackoverflow.com/questions/1094841/
+
+    Returns:
+        A string that contains the formatted size of bytes with the correct suffix
+    """
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, "Yi", suffix)
+
+
 if __name__ == "__main__":
     paths = get_deletable_movies()
+    size = reduce(lambda a, b: a + b, [movie.radarr.size for movie in paths])
     for path in paths:
         print(path.pretty)
     print(len(paths))
+    print(f"total size: {sizeof_fmt(size)}")

@@ -11,13 +11,14 @@ API_KEY = "***REMOVED***"
 
 
 @dataclass
-class MoviePath:
+class RadarrMovie:
     """Dataclass for path information from radarr."""
 
     original: str
     filename: str
     basepath: str
     date_added: datetime
+    size: int
 
     @property
     def fullpath(self):
@@ -28,7 +29,7 @@ class MoviePath:
         return f"Path(filename={self.filename}, original={self.original}, date_added={self.date_added})"  # noqa: E501
 
 
-Movies = Dict[str, MoviePath]
+Movies = Dict[str, RadarrMovie]
 
 
 def _url(path: str) -> str:
@@ -54,9 +55,10 @@ def get_movie_filepaths() -> Movies:
             and "sceneName" in movie["movieFile"].keys()
             and movie["downloaded"]
         ):
-            movies[movie["movieFile"]["sceneName"]] = MoviePath(
+            movies[movie["movieFile"]["sceneName"]] = RadarrMovie(
                 original=movie["movieFile"]["sceneName"],
                 filename=movie["movieFile"]["relativePath"],
+                size=movie["movieFile"]["size"],
                 date_added=dt.parse(
                     movie["movieFile"]["dateAdded"].replace("Z", "+00:00")
                 ),
