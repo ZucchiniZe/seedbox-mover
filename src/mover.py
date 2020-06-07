@@ -99,19 +99,23 @@ def get_deletable_movies() -> List[Movie]:
     return movies_in_both + movies_in_radarr_only
 
 
-def sizeof_fmt(num: float, suffix: str = "B") -> str:
+def human_readable_size(size: float, decimal_places: int = 3) -> str:
     """Fomatter for num in bytes.
 
-    Gotten from https://stackoverflow.com/questions/1094841/
+    Gotten from https://stackoverflow.com/a/43690506/3453207
+
+    Args:
+        size:           a number of bytes
+        decimal_places: number of decimal places to report
 
     Returns:
         A string that contains the formatted size of bytes with the correct suffix
     """
-    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
-        if abs(num) < 1024.0:
-            return "%3.1f%s%s" % (num, unit, suffix)
-        num /= 1024.0
-    return "%.1f%s%s" % (num, "Yi", suffix)
+    for unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
+        if size < 1024.0:
+            break
+        size /= 1024.0
+    return f"{size:.{decimal_places}f}{unit}"
 
 
 if __name__ == "__main__":
@@ -120,4 +124,4 @@ if __name__ == "__main__":
     for path in paths:
         print(path.pretty)
     print(len(paths))
-    print(f"total size: {sizeof_fmt(size)}")
+    print(f"total size: {human_readable_size(size)}")
