@@ -63,9 +63,7 @@ def get_movie_filepaths() -> Dict[str, RadarrMovie]:
                     original=movie["movieFile"]["sceneName"],
                     filename=movie["movieFile"]["relativePath"],
                     size=movie["movieFile"]["size"],
-                    date_added=dt.parse(
-                        movie["movieFile"]["dateAdded"].replace("Z", "+00:00")
-                    ),
+                    date_added=dt.parse(movie["movieFile"]["dateAdded"]),
                     basepath=movie["path"],
                 )
     except json.JSONDecodeError:

@@ -139,7 +139,7 @@ def get_all_deletable_movies() -> List[Movie]:
 
 
 if __name__ == "__main__":
-    paths: List[Movie] = get_radarr_deletable_movies()
+    paths: List[Movie] = get_combined_deletable_movies()
     size = reduce(lambda a, b: a + b, [movie.radarr.size for movie in paths])
 
     for path in paths:
