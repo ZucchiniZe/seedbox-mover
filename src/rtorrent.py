@@ -1,7 +1,7 @@
 """Interface for rTorrent."""
 from dataclasses import dataclass
 from datetime import datetime
-import pathlib
+from pathlib import Path
 from typing import List, Optional
 import xmlrpc.client
 
@@ -25,11 +25,26 @@ class Torrent:
     added: datetime
     finished: Optional[datetime]
     trackers: List[str]
+    path: Path
 
     def __repr__(self):
         return (
             f"Torrent(name={self.name}, label={self.label}, finished={self.finished})"
         )
+
+    def delete(self, dry_run=False) -> Path:
+        """Calls the delete method at rTorrent to remove the torrent from the client.
+
+        Args:
+            dry_run (bool, optional): When true, don't make any changes.
+            Defaults to False.
+
+        Returns:
+            Path: the path of the directory or file that was removed.
+        """
+        if not dry_run:
+            server.d.erase(self.hash)
+        return self.path
 
 
 def get_all_torrents() -> List[Torrent]:
@@ -51,12 +66,13 @@ def get_all_torrents() -> List[Torrent]:
         "d.timestamp.started=",
         "d.timestamp.finished=",
         't.multicall=,"","t.url="',
+        "d.base_path=",
         "d.is_multi_file=",
     )
 
     for torrent in list:
         # if the torrent is just a single file, remove the extension from the name
-        name = torrent[1] if torrent[7] else pathlib.Path(torrent[1]).stem
+        name = torrent[1] if torrent[8] else Path(torrent[1]).stem
         # handle the possibility of torrents not being finished
         finished = datetime.fromtimestamp(torrent[5]) if torrent[5] else None
 
@@ -69,6 +85,7 @@ def get_all_torrents() -> List[Torrent]:
                 added=datetime.fromtimestamp(torrent[4]),
                 finished=finished,
                 trackers=[group[1] for group in torrent[6]],
+                path=Path(torrent[7]),
             )
         )
 
