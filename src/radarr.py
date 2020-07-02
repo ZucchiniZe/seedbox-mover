@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 import json
+from pathlib import Path
 from typing import Dict
 
 import dateutil.parser as dt
@@ -19,9 +20,9 @@ API_KEY = env("RADARR_KEY")
 class RadarrMovie:
     """Dataclass for path information from radarr."""
 
-    original: str
-    filename: str
-    basepath: str
+    original: Path
+    filename: Path
+    basepath: Path
     date_added: datetime
     size: int
 
@@ -60,11 +61,11 @@ def get_movie_filepaths() -> Dict[str, RadarrMovie]:
                 and movie["downloaded"]
             ):
                 movies[movie["movieFile"]["sceneName"]] = RadarrMovie(
-                    original=movie["movieFile"]["sceneName"],
-                    filename=movie["movieFile"]["relativePath"],
+                    original=Path(movie["movieFile"]["sceneName"]),
+                    filename=Path(movie["movieFile"]["relativePath"]),
+                    basepath=Path(movie["path"]),
                     size=movie["movieFile"]["size"],
                     date_added=dt.parse(movie["movieFile"]["dateAdded"]),
-                    basepath=movie["path"],
                 )
     except json.JSONDecodeError:
         print("json is malformed")
