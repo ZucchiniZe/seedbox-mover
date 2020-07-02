@@ -152,3 +152,4 @@ cython_debug/
 ## Custom
 .env
 .idea
+deletable.txt

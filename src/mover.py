@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from functools import reduce
+from pathlib import Path
 from typing import List, Optional
 
 import radarr
@@ -139,11 +140,19 @@ def get_all_deletable_movies() -> List[Movie]:
 
 
 if __name__ == "__main__":
-    paths: List[Movie] = get_combined_deletable_movies()
+    paths: List[Movie] = get_all_deletable_movies()
     size = reduce(lambda a, b: a + b, [movie.radarr.size for movie in paths])
+    deleted_paths: List[Path] = []
 
-    for path in paths:
-        print(path.radarr.basepath)
+    for movie in paths:
+        print(movie.radarr.basepath)
+        if torrent := movie.torrent:
+            path = torrent.delete(dry_run=True)
+            deleted_paths.append(path)
+
+    with open("deletable.txt", "w") as file:
+        for item in deleted_paths:
+            file.write(f"{item.as_posix()}\n")
 
     print(len(paths))
     print(f"total size: {human_readable_size(size)}")
