@@ -98,7 +98,7 @@ def get_radarr_deletable_movies() -> List[Movie]:
     torrent_names = list(map(lambda torrent: torrent.name, all_torrents))
     movies_in_radarr_only = []
     for path in movie_paths.values():
-        if path.original not in torrent_names:
+        if path.original.name not in torrent_names:
             movies_in_radarr_only.append(Movie(radarr=path, torrent=None))
 
     return movies_in_radarr_only
