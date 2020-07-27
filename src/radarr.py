@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 import json
-from pathlib import Path
+from pathlib import PurePath
 from typing import Dict
 
 import dateutil.parser as dt
@@ -20,9 +20,9 @@ API_KEY = env("RADARR_KEY")
 class RadarrMovie:
     """Dataclass for path information from radarr."""
 
-    original: Path
-    filename: Path
-    basepath: Path
+    original: PurePath
+    filename: PurePath
+    basepath: PurePath
     date_added: datetime
     size: int
 
@@ -61,9 +61,9 @@ def get_movie_filepaths() -> Dict[str, RadarrMovie]:
                 and movie["downloaded"]
             ):
                 movies[movie["movieFile"]["sceneName"]] = RadarrMovie(
-                    original=Path(movie["movieFile"]["sceneName"]),
-                    filename=Path(movie["movieFile"]["relativePath"]),
-                    basepath=Path(movie["path"]),
+                    original=PurePath(movie["movieFile"]["sceneName"]),
+                    filename=PurePath(movie["movieFile"]["relativePath"]),
+                    basepath=PurePath(movie["path"]),
                     size=movie["movieFile"]["size"],
                     date_added=dt.parse(movie["movieFile"]["dateAdded"]),
                 )
