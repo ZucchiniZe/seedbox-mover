@@ -153,3 +153,4 @@ cython_debug/
 .env
 .idea
 deletable.txt
+.DS_Store

@@ -1,7 +1,7 @@
 """Interface for rTorrent."""
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
+from pathlib import PurePath
 from typing import List, Optional
 import xmlrpc.client
 
@@ -25,14 +25,14 @@ class Torrent:
     added: datetime
     finished: Optional[datetime]
     trackers: List[str]
-    path: Path
+    path: PurePath
 
     def __repr__(self):
         return (
             f"Torrent(name={self.name}, label={self.label}, finished={self.finished})"
         )
 
-    def delete(self, dry_run=False) -> Path:
+    def delete(self, dry_run=False) -> PurePath:
         """Calls the delete method at rTorrent to remove the torrent from the client.
 
         Args:
@@ -72,7 +72,7 @@ def get_all_torrents() -> List[Torrent]:
 
     for torrent in list:
         # if the torrent is just a single file, remove the extension from the name
-        name = torrent[1] if torrent[8] else Path(torrent[1]).stem
+        name = torrent[1] if torrent[8] else PurePath(torrent[1]).stem
         # handle the possibility of torrents not being finished
         finished = datetime.fromtimestamp(torrent[5]) if torrent[5] else None
 
@@ -85,7 +85,7 @@ def get_all_torrents() -> List[Torrent]:
                 added=datetime.fromtimestamp(torrent[4]),
                 finished=finished,
                 trackers=[group[1] for group in torrent[6]],
-                path=Path(torrent[7]),
+                path=PurePath(torrent[7]),
             )
         )
 

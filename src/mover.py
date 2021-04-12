@@ -1,8 +1,8 @@
 """Find torrents on seedbox that can be safely removed."""
 from dataclasses import dataclass
 from datetime import datetime
-from functools import reduce
-from pathlib import Path
+from functools import reduce, partial
+from pathlib import PurePath
 from typing import List, Optional
 
 import radarr
@@ -104,7 +104,7 @@ def get_radarr_deletable_movies() -> List[Movie]:
     return movies_in_radarr_only
 
 
-def get_combined_deletable_movies() -> List[Movie]:
+def get_combined_deletable_movies(days: int = 30) -> List[Movie]:
     """List of movies that exist in rtorrent and radarr that satisfy conditions of deletion.
 
     Conditions:
@@ -117,6 +117,8 @@ def get_combined_deletable_movies() -> List[Movie]:
     """
     movie_paths = radarr.get_movie_filepaths()
     all_torrents = rtorrent.get_all_torrents()
+
+    partial_filter = partial(finished_time_filter, days=days)
 
     old_torrents = filter(finished_time_filter, all_torrents)
 
@@ -139,20 +141,37 @@ def get_all_deletable_movies() -> List[Movie]:
     return get_radarr_deletable_movies() + get_combined_deletable_movies()
 
 
+def transform_path(path: PurePath, torrent: bool = False) -> str:
+    """Turns a PurePath into a directory name for cupid
+
+    Args:
+        path (PurePath): directory
+
+    Returns:
+        str: unix directory with escaped values
+    """
+    parsed = path.as_posix().replace("'", "\\'").replace("(", "\(").replace(")", "\)")
+
+    replaced = parsed if torrent else parsed.replace("mount", "media")
+
+    return f'"{replaced}"'
+
+
 if __name__ == "__main__":
-    paths: List[Movie] = get_all_deletable_movies()
+    paths: List[Movie] = get_combined_deletable_movies()
     size = reduce(lambda a, b: a + b, [movie.radarr.size for movie in paths])
-    deleted_paths: List[Path] = []
+    deleted_paths: List[PurePath] = []
 
     for movie in paths:
-        print(movie.radarr.basepath)
+        print(transform_path(movie.radarr.basepath))
         if torrent := movie.torrent:
-            path = torrent.delete(dry_run=True)
+            # TODO: turn the dry run flag into some kind of command line argument
+            path = torrent.delete(dry_run=False)
             deleted_paths.append(path)
 
     with open("deletable.txt", "w") as file:
         for item in deleted_paths:
-            file.write(f"{item.as_posix()}\n")
+            file.write(f"{transform_path(item, torrent=True)}\n")
 
     print(len(paths))
     print(f"total size: {human_readable_size(size)}")
