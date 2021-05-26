@@ -1,9 +1,11 @@
 """Find torrents on seedbox that can be safely removed."""
 from dataclasses import dataclass
 from datetime import datetime
-from functools import reduce, partial
+from functools import reduce
 from pathlib import PurePath
 from typing import List, Optional
+
+import click
 
 import radarr
 import rtorrent
@@ -65,6 +67,76 @@ def finished_time_filter(
         return False
 
 
+def get_radarr_deletable_movies() -> List[Movie]:
+    """List of movies that only exist in radarr and not rtorrent.
+
+    Returns:
+        List[Movie]: List of movies
+    """
+    movie_paths = radarr.get_movie_filepaths()
+    all_torrents = rtorrent.get_all_torrents()
+
+    # find the movies that exist in radarr but have already been deleted in rTorrent
+    torrent_names = list(map(lambda torrent: torrent.name, all_torrents))
+    movies_in_radarr_only = []
+    for path in movie_paths.values():
+        if path.original.name not in torrent_names:
+            movies_in_radarr_only.append(Movie(radarr=path, torrent=None))
+
+    return movies_in_radarr_only
+
+
+def get_rtorrent_deletable_movies(days: int = 30) -> List[Movie]:
+    """List of movies that exist in rtorrent and radarr that satisfy conditions of deletion.
+
+    Conditions:
+        - movie exists in rtorrent
+        - movie exists in radarr
+        - has finished downloading more than 30 days ago
+
+    Returns:
+        List[Movie]: A list of movies that have satisfied the conditions.
+    """
+    movie_paths = radarr.get_movie_filepaths()
+    all_torrents = rtorrent.get_all_torrents()
+
+    old_torrents = filter(finished_time_filter, all_torrents)
+
+    # get the union of torrents that exist in rTorrent and Radarr
+    # TODO: limit to specifc tracker?
+    movies_in_both = []
+    for torrent in old_torrents:
+        if path := movie_paths.get(torrent.name, None):
+            movies_in_both.append(Movie(radarr=path, torrent=torrent))
+
+    return movies_in_both
+
+
+def get_all_deletable_movies() -> List[Movie]:
+    """Combine both conditions to get a list of all movies that can be deleted.
+
+    Returns:
+        List[Movie]: All movies that satisfy conditions for deletion
+    """
+    return get_radarr_deletable_movies() + get_rtorrent_deletable_movies()
+
+
+def transform_path(path: PurePath, torrent: bool = False) -> str:
+    """Turns a PurePath into a directory name for cupid
+
+    Args:
+        path (PurePath): directory
+
+    Returns:
+        str: unix directory with escaped values
+    """
+    parsed = path.as_posix().replace("'", "\\'").replace("(", "\(").replace(")", "\)")
+
+    replaced = parsed if torrent else parsed.replace("mount", "media")
+
+    return f'"{replaced}"'
+
+
 def human_readable_size(size: float, decimal_places: int = 3) -> str:
     """Formatter for num in bytes.
 
@@ -85,93 +157,54 @@ def human_readable_size(size: float, decimal_places: int = 3) -> str:
     return f"{size:.{decimal_places}f}{unit}"
 
 
-def get_radarr_deletable_movies() -> List[Movie]:
-    """List of movies that only exist in radarr and not rtorrent.
-
-    Returns:
-        List[Movie]: List of movies
+@click.command()
+@click.option(
+    "-s",
+    "--source",
+    default="rtorrent",
+    show_default=True,
+    type=click.Choice(["both", "radarr", "rtorrent"], case_sensitive=False),
+    help="type of source to get deletable movies from.",
+)
+@click.option(
+    "--dry-run", is_flag=True, help="run a dry run and show how large deletion will be"
+)
+def mover(source: str, dry_run: bool):
     """
-    movie_paths = radarr.get_movie_filepaths()
-    all_torrents = rtorrent.get_all_torrents()
+    Custom program to search through radarr and rtorrent and remove unneeded torrents.
 
-    # find the movies that exist in radarr but have already been deleted in rTorrent
-    torrent_names = list(map(lambda torrent: torrent.name, all_torrents))
-    movies_in_radarr_only = []
-    for path in movie_paths.values():
-        if path.original.name not in torrent_names:
-            movies_in_radarr_only.append(Movie(radarr=path, torrent=None))
-
-    return movies_in_radarr_only
-
-
-def get_combined_deletable_movies(days: int = 30) -> List[Movie]:
-    """List of movies that exist in rtorrent and radarr that satisfy conditions of deletion.
-
-    Conditions:
-        - movie exists in rtorrent
-        - movie exists in radarr
-        - has finished downloading more than 30 days ago
-
-    Returns:
-        List[Movie]: A list of movies that have satisfied the conditions.
+    \b
+    radarr:
+        searches through for movies that only exist in radarr but not in rtorrent.
+    rtorrent:
+        searches through for movies in both radarr and rtorrent that has finished downloading more than 30 days ago.
+    both:
+        combines both sources.
     """
-    movie_paths = radarr.get_movie_filepaths()
-    all_torrents = rtorrent.get_all_torrents()
+    paths: List[Movie]
+    if source == "radarr":
+        paths = get_radarr_deletable_movies()
+    elif source == "rtorrent":
+        paths = get_rtorrent_deletable_movies()
+    else:
+        paths = get_all_deletable_movies()
 
-    partial_filter = partial(finished_time_filter, days=days)
-
-    old_torrents = filter(finished_time_filter, all_torrents)
-
-    # get the union of torrents that exist in rTorrent and Radarr
-    # TODO: limit to specifc tracker?
-    movies_in_both = []
-    for torrent in old_torrents:
-        if path := movie_paths.get(torrent.name, None):
-            movies_in_both.append(Movie(radarr=path, torrent=torrent))
-
-    return movies_in_both
-
-
-def get_all_deletable_movies() -> List[Movie]:
-    """Combine both conditions to get a list of all movies that can be deleted.
-
-    Returns:
-        List[Movie]: All movies that satisfy conditions for deletion
-    """
-    return get_radarr_deletable_movies() + get_combined_deletable_movies()
-
-
-def transform_path(path: PurePath, torrent: bool = False) -> str:
-    """Turns a PurePath into a directory name for cupid
-
-    Args:
-        path (PurePath): directory
-
-    Returns:
-        str: unix directory with escaped values
-    """
-    parsed = path.as_posix().replace("'", "\\'").replace("(", "\(").replace(")", "\)")
-
-    replaced = parsed if torrent else parsed.replace("mount", "media")
-
-    return f'"{replaced}"'
-
-
-if __name__ == "__main__":
-    paths: List[Movie] = get_combined_deletable_movies()
     size = reduce(lambda a, b: a + b, [movie.radarr.size for movie in paths])
     deleted_paths: List[PurePath] = []
 
     for movie in paths:
-        print(transform_path(movie.radarr.basepath))
+        click.echo(transform_path(movie.radarr.basepath))
         if torrent := movie.torrent:
-            # TODO: turn the dry run flag into some kind of command line argument
-            path = torrent.delete(dry_run=False)
+            path = torrent.delete(dry_run=dry_run)
             deleted_paths.append(path)
 
     with open("deletable.txt", "w") as file:
         for item in deleted_paths:
             file.write(f"{transform_path(item, torrent=True)}\n")
 
-    print(len(paths))
-    print(f"total size: {human_readable_size(size)}")
+    click.echo(len(paths))
+    click.echo(f"total size: {human_readable_size(size)}")
+
+
+if __name__ == "__main__":
+    mover()
