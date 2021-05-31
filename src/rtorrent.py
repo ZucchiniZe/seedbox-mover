@@ -56,7 +56,7 @@ def get_all_torrents() -> List[Torrent]:
         A list of formatted torrents
     """
     torrents = []
-    list = server.d.multicall2(
+    rpc_result = server.d.multicall2(
         "",
         "main",
         "d.hash=",
@@ -70,7 +70,7 @@ def get_all_torrents() -> List[Torrent]:
         "d.is_multi_file=",
     )
 
-    for torrent in list:
+    for torrent in rpc_result:
         # if the torrent is just a single file, remove the extension from the name
         name = torrent[1] if torrent[8] else PurePath(torrent[1]).stem
         # handle the possibility of torrents not being finished

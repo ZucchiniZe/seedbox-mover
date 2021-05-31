@@ -121,6 +121,9 @@ def get_all_deletable_movies() -> List[Movie]:
     return get_radarr_deletable_movies() + get_rtorrent_deletable_movies()
 
 
+# helper functions
+
+
 def transform_path(path: PurePath, torrent: bool = False) -> str:
     """Turns a PurePath into a directory name for cupid
 
