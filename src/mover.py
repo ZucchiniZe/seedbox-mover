@@ -84,13 +84,25 @@ def get_all_deletable_movies(days: int = 30) -> List[Movie]:
     default="rtorrent",
     show_default=True,
     type=click.Choice(["both", "radarr", "rtorrent"], case_sensitive=False),
-    help="type of source to get deletable movies from.",
+    help="Type of source to get deletable movies from.",
 )
 @click.option(
-    "--dry-run", is_flag=True, help="run a dry run and show how large deletion will be"
+    "--dry-run", is_flag=True, help="Run a dry run and show how large deletion will be."
 )
-@click.option("-d", "--days", default=30, type=int)
-@click.option("--show-media-path", is_flag=True, default=False)
+@click.option(
+    "-d",
+    "--days",
+    default=30,
+    type=int,
+    help="Number of days old a torrent has to be to be deleted.",
+)
+@click.option(
+    "-p",
+    "--show-media-path",
+    is_flag=True,
+    default=False,
+    help="Print full path of local folders.",
+)
 def mover(source: str, dry_run: bool, days: int, show_media_path: bool):
     """Custom program to search through radarr and rtorrent and remove unneeded torrents.
 
