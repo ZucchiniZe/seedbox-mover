@@ -1,7 +1,8 @@
-"""Find torrents on seedbox that can be safely removed."""
+"""Main entrypoint for mover utility"""
+import operator
 from dataclasses import dataclass
 from datetime import datetime
-from functools import reduce
+from functools import partial, reduce
 from pathlib import PurePath
 from typing import List, Optional
 
@@ -9,66 +10,15 @@ import click
 
 import radarr
 import rtorrent
-
-
-@dataclass
-class Movie:
-    """Movie with path and torrent information."""
-
-    radarr: radarr.RadarrMovie
-    torrent: Optional[rtorrent.Torrent]
-
-    def delete(self):  # noqa: D102
-        # TODO: figure out how to handle deleting of files
-        pass
-
-    @property
-    def pretty(self) -> str:
-        """Nice nested text representation of a movie and its objects."""
-        if self.torrent:
-            days_old = (datetime.today() - self.torrent.finished).days  # type: ignore
-            return f"""Movie
-└─ Path: {self.radarr.fullpath}
-  └─ size: {human_readable_size(self.radarr.size, decimal_places=1)}
-  └─ original: {self.radarr.original}
-└─ Torrent: {self.torrent.name}
-  └─ label: {self.torrent.label}
-  └─ ratio: {self.torrent.ratio}
-  └─ finished: {self.torrent.finished} ({days_old} days old)"""
-        else:
-            return f"""Movie
-└─ Path: {self.radarr.fullpath}
-  └─ size: {human_readable_size(self.radarr.size, decimal_places=1)}
-  └─ original: {self.radarr.original}"""
-
-    def __repr__(self):
-        return f"Movie({self.radarr.original})"
-
-
-def finished_time_filter(
-    torrent: rtorrent.Torrent, invert: bool = False, days: int = 30
-) -> bool:
-    """Filter function torrents finished older than `days`.
-
-    Args:
-        torrent (rtorrent.Torrent): torrent object to filter upon
-        invert (bool, optional): invert filter so its days young. Defaults to False.
-        days (int, optional): number of days filter should be. Defaults to 30.
-
-    Returns:
-        bool: value to filter older torrents
-    """
-    if torrent.finished is not None and torrent.label == "radarr":
-        if invert:
-            return (datetime.today() - torrent.finished).days < days
-        else:
-            return (datetime.today() - torrent.finished).days > days
-    else:
-        return False
+import util
+from movie import Movie
 
 
 def get_radarr_deletable_movies() -> List[Movie]:
     """List of movies that only exist in radarr and not rtorrent.
+
+    note: this returns a lot of false positives since movies exist in google
+      drive and radarr but have been since deleted from rtorrent.
 
     Returns:
         List[Movie]: List of movies
@@ -90,9 +40,12 @@ def get_rtorrent_deletable_movies(days: int = 30) -> List[Movie]:
     """List of movies that exist in rtorrent and radarr that satisfy conditions of deletion.
 
     Conditions:
-        - movie exists in rtorrent
-        - movie exists in radarr
-        - has finished downloading more than 30 days ago
+    - movie exists in rtorrent
+    - movie exists in radarr
+    - has finished downloading more than 30 days ago
+
+    Args:
+        days (int, optional): amount of days to search for within rtorrent
 
     Returns:
         List[Movie]: A list of movies that have satisfied the conditions.
@@ -100,10 +53,12 @@ def get_rtorrent_deletable_movies(days: int = 30) -> List[Movie]:
     movie_paths = radarr.get_movie_filepaths()
     all_torrents = rtorrent.get_all_torrents()
 
-    old_torrents = filter(finished_time_filter, all_torrents)
+    partial_filter = partial(util.finished_time_filter, days=days)
+
+    old_torrents = filter(partial_filter, all_torrents)
 
     # get the union of torrents that exist in rTorrent and Radarr
-    # TODO: limit to specifc tracker?
+    # TODO: limit to specifc tracker? implement with another filter
     movies_in_both = []
     for torrent in old_torrents:
         if path := movie_paths.get(torrent.name, None):
@@ -112,52 +67,16 @@ def get_rtorrent_deletable_movies(days: int = 30) -> List[Movie]:
     return movies_in_both
 
 
-def get_all_deletable_movies() -> List[Movie]:
+def get_all_deletable_movies(days: int = 30) -> List[Movie]:
     """Combine both conditions to get a list of all movies that can be deleted.
+
+    Args:
+        days (int, optional): amount of days to search for within rtorrent
 
     Returns:
         List[Movie]: All movies that satisfy conditions for deletion
     """
-    return get_radarr_deletable_movies() + get_rtorrent_deletable_movies()
-
-
-# helper functions
-
-
-def transform_path(path: PurePath, torrent: bool = False) -> str:
-    """Turns a PurePath into a directory name for cupid
-
-    Args:
-        path (PurePath): directory
-
-    Returns:
-        str: unix directory with escaped values
-    """
-    parsed = path.as_posix().replace("'", "\\'").replace("(", "\(").replace(")", "\)")
-
-    replaced = parsed if torrent else parsed.replace("mount", "media")
-
-    return f'"{replaced}"'
-
-
-def human_readable_size(size: float, decimal_places: int = 3) -> str:
-    """Formatter for num in bytes.
-
-    Gotten from https://stackoverflow.com/a/43690506/3453207
-
-    Args:
-        size (float): number of bytes
-        decimal_places (int, optional): number of decimal places to report.
-                                        Defaults to 3.
-
-    Returns:
-        str: String formatted with the correct unit suffix
-    """
-    for unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
-        if size < 1024.0:
-            break
-        size /= 1024.0
-    return f"{size:.{decimal_places}f}{unit}"
+    return get_radarr_deletable_movies() + get_rtorrent_deletable_movies(days)
 
 
 @click.command()
@@ -172,7 +91,9 @@ def human_readable_size(size: float, decimal_places: int = 3) -> str:
 @click.option(
     "--dry-run", is_flag=True, help="run a dry run and show how large deletion will be"
 )
-def mover(source: str, dry_run: bool):
+@click.option("-d", "--days", default=30, type=int)
+@click.option("--show-media-path", is_flag=True, default=False)
+def mover(source: str, dry_run: bool, days: int, show_media_path: bool):
     """
     Custom program to search through radarr and rtorrent and remove unneeded torrents.
 
@@ -184,29 +105,32 @@ def mover(source: str, dry_run: bool):
     both:
         combines both sources.
     """
+    click.echo(f"Dry-run: {dry_run}, Removing from {source} for the last {days} days")
+
     paths: List[Movie]
     if source == "radarr":
         paths = get_radarr_deletable_movies()
     elif source == "rtorrent":
-        paths = get_rtorrent_deletable_movies()
+        paths = get_rtorrent_deletable_movies(days)
     else:
-        paths = get_all_deletable_movies()
+        paths = get_all_deletable_movies(days)
 
-    size = reduce(lambda a, b: a + b, [movie.radarr.size for movie in paths])
+    size = reduce(operator.add, [movie.radarr.size for movie in paths])
     deleted_paths: List[PurePath] = []
 
     for movie in paths:
-        click.echo(transform_path(movie.radarr.basepath))
+        if show_media_path:
+            click.echo(util.transform_path(movie.radarr.basepath))
         if torrent := movie.torrent:
             path = torrent.delete(dry_run=dry_run)
             deleted_paths.append(path)
 
     with open("deletable.txt", "w") as file:
         for item in deleted_paths:
-            file.write(f"{transform_path(item, torrent=True)}\n")
+            file.write(f"{util.transform_path(item, torrent=True)}\n")
 
-    click.echo(len(paths))
-    click.echo(f"total size: {human_readable_size(size)}")
+    click.echo(f"{len(paths)} torrents to delete")
+    click.echo(f"total size: {util.human_readable_size(size)}")
 
 
 if __name__ == "__main__":
