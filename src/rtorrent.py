@@ -16,7 +16,7 @@ server = xmlrpc.client.Server(server_url)
 
 @dataclass
 class Torrent:
-    """Torrent Data."""
+    """rTorrent Data wrapper."""
 
     hash: str
     name: str

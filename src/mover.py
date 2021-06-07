@@ -112,6 +112,10 @@ def mover(source: str, dry_run: bool, days: int, show_media_path: bool):
     else:
         paths = get_all_deletable_movies(days)
 
+    if len(paths) == 0:
+        click.echo("0 torrents to delete")
+        return
+
     size = reduce(operator.add, [movie.radarr.size for movie in paths])
     deleted_paths: List[PurePath] = []
 

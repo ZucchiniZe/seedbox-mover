@@ -18,7 +18,7 @@ API_KEY = env("RADARR_KEY")
 
 @dataclass
 class RadarrMovie:
-    """Dataclass for path information from radarr."""
+    """Radarr movie wrapper."""
 
     original: PurePath
     filename: PurePath
