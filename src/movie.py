@@ -1,10 +1,11 @@
-"""Movie dataclass"""
+"""Movie dataclass."""
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Optional
 
 import radarr
 import rtorrent
-from util import human_readable_size
+import util
 
 
 @dataclass
@@ -25,7 +26,7 @@ class Movie:
             days_old = (datetime.today() - self.torrent.finished).days  # type: ignore
             return f"""Movie
 └─ Path: {self.radarr.fullpath}
-  └─ size: {human_readable_size(self.radarr.size, decimal_places=1)}
+  └─ size: {util.human_readable_size(self.radarr.size, decimal_places=1)}
   └─ original: {self.radarr.original}
 └─ Torrent: {self.torrent.name}
   └─ label: {self.torrent.label}
@@ -34,7 +35,7 @@ class Movie:
         else:
             return f"""Movie
 └─ Path: {self.radarr.fullpath}
-  └─ size: {human_readable_size(self.radarr.size, decimal_places=1)}
+  └─ size: {util.human_readable_size(self.radarr.size, decimal_places=1)}
   └─ original: {self.radarr.original}"""
 
     def __repr__(self):

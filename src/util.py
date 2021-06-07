@@ -1,4 +1,4 @@
-"""Utility functions and business logic"""
+"""Utility functions and business logic."""
 from datetime import datetime
 from pathlib import PurePath
 
@@ -26,7 +26,7 @@ def human_readable_size(size: float, decimal_places: int = 3) -> str:
 
 
 def transform_path(path: PurePath, torrent: bool = False) -> str:
-    """Turns a PurePath into a directory name for cupid
+    """Turns a PurePath into a directory name for cupid.
 
     Args:
         path (PurePath): directory

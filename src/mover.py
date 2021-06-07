@@ -1,10 +1,8 @@
-"""Main entrypoint for mover utility"""
+"""Main entrypoint for mover utility."""
 import operator
-from dataclasses import dataclass
-from datetime import datetime
 from functools import partial, reduce
 from pathlib import PurePath
-from typing import List, Optional
+from typing import List
 
 import click
 
@@ -94,8 +92,7 @@ def get_all_deletable_movies(days: int = 30) -> List[Movie]:
 @click.option("-d", "--days", default=30, type=int)
 @click.option("--show-media-path", is_flag=True, default=False)
 def mover(source: str, dry_run: bool, days: int, show_media_path: bool):
-    """
-    Custom program to search through radarr and rtorrent and remove unneeded torrents.
+    """Custom program to search through radarr and rtorrent and remove unneeded torrents.
 
     \b
     radarr:
